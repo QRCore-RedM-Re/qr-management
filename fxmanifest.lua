@@ -1,10 +1,8 @@
 fx_version 'cerulean'
 game 'rdr3'
-
 rdr3_warning 'I acknowledge that this is a prerelease build of RedM, and I am aware my resources *will* become incompatible once RedM ships.'
 
-description 'qr-bossmenu'
-version '2.0.0'
+description 'QR-Management'
 
 client_scripts {
     'client/*.lua'
@@ -13,6 +11,10 @@ client_scripts {
 server_scripts {
     '@oxmysql/lib/MySQL.lua',
     'server/*.lua'
+}
+
+shared_scripts {
+	'config.lua'
 }
 
 server_exports {
