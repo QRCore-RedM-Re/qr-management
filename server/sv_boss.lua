@@ -1,13 +1,12 @@
-local sharedJobs = exports['qr-core']:GetJobs()
-
+local QRCore = exports['qr-core']:GetCoreObject()
 local Accounts = {}
 
 function ExploitBan(id, reason)
 	MySQL.insert('INSERT INTO bans (name, license, discord, ip, reason, expire, bannedby) VALUES (?, ?, ?, ?, ?, ?, ?)', {
 		GetPlayerName(id),
-		exports['qr-core']:GetIdentifier(id, 'license'),
-		exports['qr-core']:GetIdentifier(id, 'discord'),
-		exports['qr-core']:GetIdentifier(id, 'ip'),
+		QRCore.Functions.GetIdentifier(id, 'license'),
+		QRCore.Functions.GetIdentifier(id, 'discord'),
+		QRCore.Functions.GetIdentifier(id, 'ip'),
 		reason,
 		2147483647,
 		'qr-management'
@@ -62,7 +61,7 @@ end)
 
 RegisterNetEvent("qr-bossmenu:server:withdrawMoney", function(amount)
 	local src = source
-	local Player = exports['qr-core']:GetPlayer(src)
+	local Player = QRCore.Functions.GetPlayer(src)
 
 	if not Player.PlayerData.job.isboss then ExploitBan(src, 'withdrawMoney Exploiting') return end
 
@@ -80,7 +79,7 @@ end)
 
 RegisterNetEvent("qr-bossmenu:server:depositMoney", function(amount)
 	local src = source
-	local Player = exports['qr-core']:GetPlayer(src)
+	local Player = QRCore.Functions.GetPlayer(src)
 
 	if not Player.PlayerData.job.isboss then ExploitBan(src, 'depositMoney Exploiting') return end
 
@@ -96,15 +95,15 @@ RegisterNetEvent("qr-bossmenu:server:depositMoney", function(amount)
 	TriggerClientEvent('qr-bossmenu:client:OpenMenu', src)
 end)
 
-exports['qr-core']:CreateCallback('qr-bossmenu:server:GetAccount', function(_, cb, jobname)
+QRCore.Functions.CreateCallback('qr-bossmenu:server:GetAccount', function(_, cb, jobname)
 	local result = GetAccount(jobname)
 	cb(result)
 end)
 
 -- Get Employees
-exports['qr-core']:CreateCallback('qr-bossmenu:server:GetEmployees', function(source, cb, jobname)
+QRCore.Functions.CreateCallback('qr-bossmenu:server:GetEmployees', function(source, cb, jobname)
 	local src = source
-	local Player = exports['qr-core']:GetPlayer(src)
+	local Player = QRCore.Functions.GetPlayer(src)
 
 	if not Player.PlayerData.job.isboss then ExploitBan(src, 'GetEmployees Exploiting') return end
 
@@ -112,7 +111,7 @@ exports['qr-core']:CreateCallback('qr-bossmenu:server:GetEmployees', function(so
 	local players = MySQL.query.await("SELECT * FROM `players` WHERE `job` LIKE '%".. jobname .."%'", {})
 	if players[1] ~= nil then
 		for _, value in pairs(players) do
-			local isOnline = exports['qr-core']:GetPlayerByCitizenId(value.citizenid)
+			local isOnline = QRCore.Functions.GetPlayerByCitizenId(value.citizenid)
 
 			if isOnline then
 				employees[#employees+1] = {
@@ -140,8 +139,8 @@ end)
 -- Grade Change
 RegisterNetEvent('qr-bossmenu:server:GradeUpdate', function(data)
 	local src = source
-	local Player = exports['qr-core']:GetPlayer(src)
-	local Employee = exports['qr-core']:GetPlayerByCitizenId(data.cid)
+	local Player = QRCore.Functions.GetPlayer(src)
+	local Employee = QRCore.Functions.GetPlayerByCitizenId(data.cid)
 
 	if not Player.PlayerData.job.isboss then ExploitBan(src, 'GradeUpdate Exploiting') return end
 	if data.grade > Player.PlayerData.job.grade.level then TriggerClientEvent('QRCore:Notify', src, "You cannot promote to this rank!", "error") return end
@@ -162,8 +161,8 @@ end)
 -- Fire Employee
 RegisterNetEvent('qr-bossmenu:server:FireEmployee', function(target)
 	local src = source
-	local Player = exports['qr-core']:GetPlayer(src)
-	local Employee = exports['qr-core']:GetPlayerByCitizenId(target)
+	local Player = QRCore.Functions.GetPlayer(src)
+	local Employee = QRCore.Functions.GetPlayerByCitizenId(target)
 
 	if not Player.PlayerData.job.isboss then ExploitBan(src, 'FireEmployee Exploiting') return end
 
@@ -189,7 +188,7 @@ RegisterNetEvent('qr-bossmenu:server:FireEmployee', function(target)
 			local job = {}
 			job.name = "unemployed"
 			job.label = "Unemployed"
-			job.payment = sharedJobs[job.name].grades['0'].payment or 500
+			job.payment = QRCore.Shared.Jobs[job.name].grades['0'].payment or 500
 			job.onduty = true
 			job.isboss = false
 			job.grade = {}
@@ -205,63 +204,11 @@ RegisterNetEvent('qr-bossmenu:server:FireEmployee', function(target)
 	TriggerClientEvent('qr-bossmenu:client:OpenMenu', src)
 end)
 
-RegisterNetEvent('qr-bossmenu:server:GivePayment', function(target, money)
-	local src = source
-	local Player = exports['qr-core']:GetPlayer(src)
-	local Employee = exports['qr-core']:GetPlayerByCitizenId(target)
-	local account = exports['qr-management']:GetAccount(Player.PlayerData.job.name)
-	if Employee then
-		if account < money then -- Checks if company has enough money to pay society
-			TriggerClientEvent('QRCore:Notify', Player.PlayerData.source, 'Your Company Is to Poor', 'error')
-		else
-			Employee.Functions.AddMoney('bank', money)
-			exports['qr-management']:RemoveMoney(Player.PlayerData.job.name, money)
-			TriggerClientEvent('QRCore:Notify', Employee.PlayerData.source, 'Your Recive a Payment : '..money)
-		end
-	else
-		TriggerClientEvent('QRCore:Notify', Player.PlayerData.source, 'Player is Offline', 'error')
-	end
-
-
-	TriggerClientEvent('qr-bossmenu:client:OpenMenu', src)
-end)
-
-RegisterNetEvent('qr-bossmenu:server:GiveBadge', function(target)
-	local src = source
-	local Player = exports['qr-core']:GetPlayer(src)
-	local Employee = exports['qr-core']:GetPlayerByCitizenId(target)
-	if Employee then
-		Employee.Functions.AddItem('specialbadge', 1)
-		TriggerClientEvent('QRCore:Notify', Employee.PlayerData.source, 'Your Recive a Badge')
-	else
-		TriggerClientEvent('QRCore:Notify', Player.PlayerData.source, 'Player is Offline', 'error')
-	end
-
-
-	TriggerClientEvent('qr-bossmenu:client:OpenMenu', src)
-end)
-
-
-RegisterNetEvent('qr-bossmenu:server:GiveBadgeSwat', function(target)
-	local src = source
-	local Player = exports['qr-core']:GetPlayer(src)
-	local Employee = exports['qr-core']:GetPlayerByCitizenId(target)
-	if Employee then
-		Employee.Functions.AddItem('specialbadgesw', 1)
-		TriggerClientEvent('QRCore:Notify', Employee.PlayerData.source, 'Your Recive a Swat Badge')
-	else
-		TriggerClientEvent('QRCore:Notify', Player.PlayerData.source, 'Player is Offline', 'error')
-	end
-
-
-	TriggerClientEvent('qr-bossmenu:client:OpenMenu', src)
-end)
-
 -- Recruit Player
 RegisterNetEvent('qr-bossmenu:server:HireEmployee', function(recruit)
 	local src = source
-	local Player = exports['qr-core']:GetPlayer(src)
-	local Target = exports['qr-core']:GetPlayer(recruit)
+	local Player = QRCore.Functions.GetPlayer(src)
+	local Target = QRCore.Functions.GetPlayer(recruit)
 
 	if not Player.PlayerData.job.isboss then ExploitBan(src, 'HireEmployee Exploiting') return end
 
@@ -274,17 +221,17 @@ RegisterNetEvent('qr-bossmenu:server:HireEmployee', function(recruit)
 end)
 
 -- Get closest player sv
-exports['qr-core']:CreateCallback('qr-bossmenu:getplayers', function(source, cb)
+QRCore.Functions.CreateCallback('qr-bossmenu:getplayers', function(source, cb)
 	local src = source
 	local players = {}
 	local PlayerPed = GetPlayerPed(src)
 	local pCoords = GetEntityCoords(PlayerPed)
-	for _, v in pairs(exports['qr-core']:GetPlayers()) do
+	for _, v in pairs(QRCore.Functions.GetPlayers()) do
 		local targetped = GetPlayerPed(v)
 		local tCoords = GetEntityCoords(targetped)
 		local dist = #(pCoords - tCoords)
 		if PlayerPed ~= targetped and dist < 10 then
-			local ped = exports['qr-core']:GetPlayer(v)
+			local ped = QRCore.Functions.GetPlayer(v)
 			players[#players+1] = {
 			id = v,
 			coords = GetEntityCoords(targetped),

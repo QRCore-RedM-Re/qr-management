@@ -1,6 +1,24 @@
-local PlayerGang = exports['qr-core']:GetPlayerData().gang
-local sharedgang = exports['qr-core']:GetGangs()
+local QRCore = exports['qr-core']:GetCoreObject()
+local PlayerGang = QRCore.Functions.GetPlayerData().gang
 local shownGangMenu = false
+local DynamicMenuItems = {}
+local gangmenu
+
+Citizen.CreateThread(function()
+     for gangmenu, v in pairs(Config.GangLocations) do
+         exports['qr-core']:createPrompt(v.gangname, v.coords, QRCore.Shared.Keybinds['J'], 'Open ' .. v.name, {
+             type = 'client',
+             event = 'qr-gangmenu:client:OpenMenu',
+             args = { },
+         })
+         if v.showblip == true then
+             local GangBlip = Citizen.InvokeNative(0x554D9D53F696D002, 1664425300, v.coords)
+             SetBlipSprite(GangBlip, GetHashKey("blip_honor_bad"), true)
+             SetBlipScale(GangBlip, 0.2)
+			 Citizen.InvokeNative(0x9CB1A1623062F402, GangBlip, v.name)
+         end
+     end
+end)
 
 -- UTIL
 local function CloseMenuFullGang()
@@ -25,12 +43,12 @@ end
 AddEventHandler('onResourceStart', function(resource)--if you restart the resource
     if resource == GetCurrentResourceName() then
         Wait(200)
-        PlayerGang = exports['qr-core']:GetPlayerData().gang
+        PlayerGang = QRCore.Functions.GetPlayerData().gang
     end
 end)
 
 RegisterNetEvent('QRCore:Client:OnPlayerLoaded', function()
-    PlayerGang = exports['qr-core']:GetPlayerData().gang
+    PlayerGang = QRCore.Functions.GetPlayerData().gang
 end)
 
 RegisterNetEvent('QRCore:Client:OnGangUpdate', function(InfoGang)
@@ -38,13 +56,30 @@ RegisterNetEvent('QRCore:Client:OnGangUpdate', function(InfoGang)
 end)
 
 RegisterNetEvent('qr-gangmenu:client:Stash', function()
-    TriggerServerEvent('ax-inv:Server:OpenInventory', "boss_" .. PlayerGang.name, {slots=100})
+    TriggerServerEvent("inventory:server:OpenInventory", "stash", "boss_" .. PlayerGang.name, {
+        maxweight = 4000000,
+        slots = 100,
+    })
     TriggerEvent("inventory:client:SetCurrentStash", "boss_" .. PlayerGang.name)
 end)
 
 RegisterNetEvent('qr-gangmenu:client:Warbobe', function()
     TriggerEvent('qr-clothing:client:openOutfitMenu')
 end)
+
+local function AddGangMenuItem(data, id)
+    local menuID = id or (#DynamicMenuItems + 1)
+    DynamicMenuItems[menuID] = deepcopy(data)
+    return menuID
+end
+
+exports("AddGangMenuItem", AddGangMenuItem)
+
+local function RemoveGangMenuItem(id)
+    DynamicMenuItems[id] = nil
+end
+
+exports("RemoveGangMenuItem", RemoveGangMenuItem)
 
 RegisterNetEvent('qr-gangmenu:client:OpenMenu', function()
     shownGangMenu = true
@@ -94,14 +129,20 @@ RegisterNetEvent('qr-gangmenu:client:OpenMenu', function()
                 event = "qr-gangmenu:client:SocietyMenu",
             }
         },
-        {
-            header = "Exit",
-            icon = "fa-solid fa-angle-left",
-            params = {
-                event = "qr-menu:closeMenu",
-            }
-        },
     }
+
+    for _, v in pairs(DynamicMenuItems) do
+        gangMenu[#gangMenu + 1] = v
+    end
+
+    gangMenu[#gangMenu + 1] = {
+        header = "Exit",
+        icon = "fa-solid fa-angle-left",
+        params = {
+            event = "qr-menu:closeMenu",
+        }
+    }
+
     exports['qr-menu']:openMenu(gangMenu)
 end)
 
@@ -113,7 +154,7 @@ RegisterNetEvent('qr-gangmenu:client:ManageGang', function()
             isMenuHeader = true,
         },
     }
-    exports['qr-core']:TriggerCallback('qr-gangmenu:server:GetEmployees', function(cb)
+    QRCore.Functions.TriggerCallback('qr-gangmenu:server:GetEmployees', function(cb)
         for _, v in pairs(cb) do
             GangMembersMenu[#GangMembersMenu + 1] = {
                 header = v.name,
@@ -147,7 +188,7 @@ RegisterNetEvent('qr-gangmenu:lient:ManageMember', function(data)
             icon = "fa-solid fa-circle-info",
         },
     }
-    for k, v in pairs(sharedgang[data.work.name].grades) do
+    for k, v in pairs(QRCore.Shared.Gangs[data.work.name].grades) do
         MemberMenu[#MemberMenu + 1] = {
             header = v.name,
             txt = "Grade: " .. k,
@@ -190,7 +231,7 @@ RegisterNetEvent('qr-gangmenu:client:HireMembers', function()
             icon = "fa-solid fa-circle-info",
         },
     }
-    exports['qr-core']:TriggerCallback('qr-gangmenu:getplayers', function(players)
+    QRCore.Functions.TriggerCallback('qr-gangmenu:getplayers', function(players)
         for _, v in pairs(players) do
             if v and v ~= PlayerId() then
                 HireMembersMenu[#HireMembersMenu + 1] = {
@@ -217,7 +258,7 @@ RegisterNetEvent('qr-gangmenu:client:HireMembers', function()
 end)
 
 RegisterNetEvent('qr-gangmenu:client:SocietyMenu', function()
-    exports['qr-core']:TriggerCallback('qr-gangmenu:server:GetAccount', function(cb)
+    QRCore.Functions.TriggerCallback('qr-gangmenu:server:GetAccount', function(cb)
         local SocietyMenu = {
             {
                 header = "Balance: $" .. comma_valueGang(cb) .. " - " .. string.upper(PlayerGang.label),
@@ -293,7 +334,7 @@ RegisterNetEvent('qr-gangmenu:client:SocietyWithdraw', function(saldoattuale)
 end)
 
 -- MAIN THREAD
-
+--[[
 CreateThread(function()
     if Config.UseTarget then
         for gang, zones in pairs(Config.GangMenuZones) do
@@ -363,3 +404,4 @@ CreateThread(function()
         end
     end
 end)
+--]]

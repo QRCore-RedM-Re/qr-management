@@ -1,6 +1,24 @@
-local PlayerJob = exports['qr-core']:GetPlayerData().job
-local sharedJobs = exports['qr-core']:GetJobs()
+local QRCore = exports['qr-core']:GetCoreObject()
+local PlayerJob = QRCore.Functions.GetPlayerData().job
 local shownBossMenu = false
+local DynamicMenuItems = {}
+local bossmenu
+
+Citizen.CreateThread(function()
+     for bossmenu, v in pairs(Config.BossLocations) do
+         exports['qr-core']:createPrompt(v.bossname, v.coords, QRCore.Shared.Keybinds['J'], 'Open ' .. v.name, {
+             type = 'client',
+             event = 'qr-bossmenu:client:OpenMenu',
+             args = { },
+         })
+         if v.showblip == true then
+             local BossBlip = Citizen.InvokeNative(0x554D9D53F696D002, 1664425300, v.coords)
+			 SetBlipSprite(BossBlip, GetHashKey("blip_honor_good"), true)
+             SetBlipScale(BossBlip, 0.2)
+			 Citizen.InvokeNative(0x9CB1A1623062F402, BossBlip, v.name)
+         end
+     end
+end)
 
 -- UTIL
 local function CloseMenuFull()
@@ -21,14 +39,28 @@ local function comma_value(amount)
     return formatted
 end
 
+local function AddBossMenuItem(data, id)
+    local menuID = id or (#DynamicMenuItems + 1)
+    DynamicMenuItems[menuID] = deepcopy(data)
+    return menuID
+end
+
+exports("AddBossMenuItem", AddBossMenuItem)
+
+local function RemoveBossMenuItem(id)
+    DynamicMenuItems[id] = nil
+end
+
+exports("RemoveBossMenuItem", RemoveBossMenuItem)
+
 AddEventHandler('onResourceStart', function(resource)
     if resource == GetCurrentResourceName() then
-        PlayerJob = exports['qr-core']:GetPlayerData().job
+        PlayerJob = QRCore.Functions.GetPlayerData().job
     end
 end)
 
 RegisterNetEvent('QRCore:Client:OnPlayerLoaded', function()
-    PlayerJob = exports['qr-core']:GetPlayerData().job
+    PlayerJob = QRCore.Functions.GetPlayerData().job
 end)
 
 RegisterNetEvent('QRCore:Client:OnJobUpdate', function(JobInfo)
@@ -84,14 +116,20 @@ RegisterNetEvent('qr-bossmenu:client:OpenMenu', function()
                 event = "qr-bossmenu:client:SocietyMenu",
             }
         },
-        {
-            header = "Exit",
-            icon = "fa-solid fa-angle-left",
-            params = {
-                event = "qr-menu:closeMenu",
-            }
-        },
     }
+
+    for _, v in pairs(DynamicMenuItems) do
+        bossMenu[#bossMenu + 1] = v
+    end
+
+    bossMenu[#bossMenu + 1] = {
+        header = "Exit",
+        icon = "fa-solid fa-angle-left",
+        params = {
+            event = "qr-menu:closeMenu",
+        }
+    }
+
     exports['qr-menu']:openMenu(bossMenu)
 end)
 
@@ -103,7 +141,7 @@ RegisterNetEvent('qr-bossmenu:client:employeelist', function()
             icon = "fa-solid fa-circle-info",
         },
     }
-    exports['qr-core']:TriggerCallback('qr-bossmenu:server:GetEmployees', function(cb)
+    QRCore.Functions.TriggerCallback('qr-bossmenu:server:GetEmployees', function(cb)
         for _, v in pairs(cb) do
             EmployeesMenu[#EmployeesMenu + 1] = {
                 header = v.name,
@@ -137,7 +175,7 @@ RegisterNetEvent('qr-bossmenu:client:ManageEmployee', function(data)
             icon = "fa-solid fa-circle-info"
         },
     }
-    for k, v in pairs(sharedJobs[data.work.name].grades) do
+    for k, v in pairs(QRCore.Shared.Jobs[data.work.name].grades) do
         EmployeeMenu[#EmployeeMenu + 1] = {
             header = v.name,
             txt = "Grade: " .. k,
@@ -163,34 +201,6 @@ RegisterNetEvent('qr-bossmenu:client:ManageEmployee', function(data)
         }
     }
     EmployeeMenu[#EmployeeMenu + 1] = {
-        header = "Give Payment",
-        icon = "fa-solid fa-user-large-slash",
-        params = {
-            event = "qr-bossmenu:client:GivePayment",
-            args = data.player.empSource
-        }
-    }
-    if PlayerJob.name == "police" then
-        EmployeeMenu[#EmployeeMenu + 1] = {
-            header = "Give Badge",
-            icon = "fas fa-dot-circle",
-            params = {
-                event = "qr-bossmenu:client:GiveBadge",
-                args = data.player.empSource
-            }
-        }
-    end
-    if PlayerJob.name == "police" then
-        EmployeeMenu[#EmployeeMenu + 1] = {
-            header = "Give Swat Badge",
-            icon = "fas fa-dot-circle",
-            params = {
-                event = "qr-bossmenu:client:GiveBadgeSwat",
-                args = data.player.empSource
-            }
-        }
-    end
-    EmployeeMenu[#EmployeeMenu + 1] = {
         header = "Return",
         icon = "fa-solid fa-angle-left",
         params = {
@@ -200,45 +210,16 @@ RegisterNetEvent('qr-bossmenu:client:ManageEmployee', function(data)
     exports['qr-menu']:openMenu(EmployeeMenu)
 end)
 
-RegisterNetEvent('qr-bossmenu:client:GivePayment', function(target)
-    local money = exports['qr-input']:ShowInput({
-        header = "Give Payment" ,
-        submitText = "Confirm",
-        inputs = {
-            {
-                type = 'number',
-                isRequired = true,
-                name = 'amount',
-                text = 'Amount'
-            }
-        }
-    })
-    if money then
-        if not money.amount then return end
-        TriggerServerEvent("qr-bossmenu:server:GivePayment", target, tonumber(money.amount))
-    end
-end)
-
-RegisterNetEvent('qr-bossmenu:client:GiveBadge', function(target)
-    TriggerServerEvent("qr-bossmenu:server:GiveBadge", target)
-end)
-RegisterNetEvent('qr-bossmenu:client:GiveBadgeSwat', function(target)
-    TriggerServerEvent("qr-bossmenu:server:GiveBadgeSwat", target)
-end)
-
 RegisterNetEvent('qr-bossmenu:client:Stash', function()
-	exports['qr-core']:GetPlayerData(function(PlayerData)
-        local cid = PlayerData.citizenid
-        TriggerServerEvent("inventory:server:OpenInventory", "stash", 'Boss'..cid, {
-            maxweight = 200,
-            slots = 25,
-        })
-        TriggerEvent("inventory:client:SetCurrentStash", 'Boss'..cid)
-    end)
+    TriggerServerEvent("inventory:server:OpenInventory", "stash", "boss_" .. PlayerJob.name, {
+        maxweight = 4000000,
+        slots = 25,
+    })
+    TriggerEvent("inventory:client:SetCurrentStash", "boss_" .. PlayerJob.name)
 end)
 
 RegisterNetEvent('qr-bossmenu:client:Wardrobe', function()
-    TriggerEvent('qr-clothing:client:openMenu', false, 'outfitMenu')
+    TriggerEvent('qr-clothing:client:openOutfitMenu')
 end)
 
 RegisterNetEvent('qr-bossmenu:client:HireMenu', function()
@@ -249,7 +230,7 @@ RegisterNetEvent('qr-bossmenu:client:HireMenu', function()
             icon = "fa-solid fa-circle-info",
         },
     }
-    exports['qr-core']:TriggerCallback('qr-bossmenu:getplayers', function(players)
+    QRCore.Functions.TriggerCallback('qr-bossmenu:getplayers', function(players)
         for _, v in pairs(players) do
             if v and v ~= PlayerId() then
                 HireMenu[#HireMenu + 1] = {
@@ -276,7 +257,7 @@ RegisterNetEvent('qr-bossmenu:client:HireMenu', function()
 end)
 
 RegisterNetEvent('qr-bossmenu:client:SocietyMenu', function()
-    exports['qr-core']:TriggerCallback('qr-bossmenu:server:GetAccount', function(cb)
+    QRCore.Functions.TriggerCallback('qr-bossmenu:server:GetAccount', function(cb)
         local SocietyMenu = {
             {
                 header = "Balance: $" .. comma_value(cb) .. " - " .. string.upper(PlayerJob.label),
@@ -351,6 +332,7 @@ RegisterNetEvent('qr-bossmenu:client:SocetyWithDraw', function(money)
     end
 end)
 
+--[[
 -- MAIN THREAD
 CreateThread(function()
     if Config.UseTarget then
@@ -359,7 +341,7 @@ CreateThread(function()
                 exports['qr-target']:AddBoxZone(job.."-BossMenu-"..index, data.coords, data.length, data.width, {
                     name = job.."-BossMenu-"..index,
                     heading = data.heading,
-                    debugPoly = false,
+                    -- debugPoly = true,
                     minZ = data.minZ,
                     maxZ = data.maxZ,
                 }, {
@@ -392,10 +374,10 @@ CreateThread(function()
                                 if #(pos - coords) <= 1.5 then
                                     nearBossmenu = true
                                     if not shownBossMenu then
-                                        exports['qr-core']:DrawText('[E] Open Job Management', 'center')
+                                        exports['qr-core']:DrawText('[E] Open Job Management', 'left')
                                         shownBossMenu = true
                                     end
-                                    if IsControlJustReleased(0, 0xCEFD9220) then
+                                    if IsControlJustReleased(0, 38) then
                                         exports['qr-core']:HideText()
                                         TriggerEvent("qr-bossmenu:client:OpenMenu")
                                     end
@@ -421,3 +403,4 @@ CreateThread(function()
         end
     end
 end)
+--]]

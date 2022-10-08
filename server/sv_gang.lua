@@ -1,4 +1,4 @@
-local sharedgang = exports['qr-core']:GetGangs()
+local QRCore = exports['qr-core']:GetCoreObject()
 local GangAccounts = {}
 
 function GetGangAccount(account)
@@ -47,7 +47,7 @@ end)
 
 RegisterNetEvent("qr-gangmenu:server:withdrawMoney", function(amount)
 	local src = source
-	local Player = exports['qr-core']:GetPlayer(src)
+	local Player = QRCore.Functions.GetPlayer(src)
 
 	if not Player.PlayerData.gang.isboss then ExploitBan(src, 'withdrawMoney Exploiting') return end
 
@@ -65,7 +65,7 @@ end)
 
 RegisterNetEvent("qr-gangmenu:server:depositMoney", function(amount)
 	local src = source
-	local Player = exports['qr-core']:GetPlayer(src)
+	local Player = QRCore.Functions.GetPlayer(src)
 
 	if not Player.PlayerData.gang.isboss then ExploitBan(src, 'depositMoney Exploiting') return end
 
@@ -81,15 +81,15 @@ RegisterNetEvent("qr-gangmenu:server:depositMoney", function(amount)
 	TriggerClientEvent('qr-gangmenu:client:OpenMenu', src)
 end)
 
-exports['qr-core']:CreateCallback('qr-gangmenu:server:GetAccount', function(_, cb, GangName)
+QRCore.Functions.CreateCallback('qr-gangmenu:server:GetAccount', function(_, cb, GangName)
 	local gangmoney = GetGangAccount(GangName)
 	cb(gangmoney)
 end)
 
 -- Get Employees
-exports['qr-core']:CreateCallback('qr-gangmenu:server:GetEmployees', function(source, cb, gangname)
+QRCore.Functions.CreateCallback('qr-gangmenu:server:GetEmployees', function(source, cb, gangname)
 	local src = source
-	local Player = exports['qr-core']:GetPlayer(src)
+	local Player = QRCore.Functions.GetPlayer(src)
 
 	if not Player.PlayerData.gang.isboss then ExploitBan(src, 'GetEmployees Exploiting') return end
 
@@ -97,7 +97,7 @@ exports['qr-core']:CreateCallback('qr-gangmenu:server:GetEmployees', function(so
 	local players = MySQL.query.await("SELECT * FROM `players` WHERE `gang` LIKE '%".. gangname .."%'", {})
 	if players[1] ~= nil then
 		for _, value in pairs(players) do
-			local isOnline = exports['qr-core']:GetPlayerByCitizenId(value.citizenid)
+			local isOnline = QRCore.Functions.GetPlayerByCitizenId(value.citizenid)
 
 			if isOnline then
 				employees[#employees+1] = {
@@ -122,8 +122,8 @@ end)
 -- Grade Change
 RegisterNetEvent('qr-gangmenu:server:GradeUpdate', function(data)
 	local src = source
-	local Player = exports['qr-core']:GetPlayer(src)
-	local Employee = exports['qr-core']:GetPlayerByCitizenId(data.cid)
+	local Player = QRCore.Functions.GetPlayer(src)
+	local Employee = QRCore.Functions.GetPlayerByCitizenId(data.cid)
 
 	if not Player.PlayerData.gang.isboss then ExploitBan(src, 'GradeUpdate Exploiting') return end
 	if data.grade > Player.PlayerData.gang.grade.level then TriggerClientEvent('QRCore:Notify', src, "You cannot promote to this rank!", "error") return end
@@ -144,8 +144,8 @@ end)
 -- Fire Member
 RegisterNetEvent('qr-gangmenu:server:FireMember', function(target)
 	local src = source
-	local Player = exports['qr-core']:GetPlayer(src)
-	local Employee = exports['qr-core']:GetPlayerByCitizenId(target)
+	local Player = QRCore.Functions.GetPlayer(src)
+	local Employee = QRCore.Functions.GetPlayerByCitizenId(target)
 
 	if not Player.PlayerData.gang.isboss then ExploitBan(src, 'FireEmployee Exploiting') return end
 
@@ -190,8 +190,8 @@ end)
 -- Recruit Player
 RegisterNetEvent('qr-gangmenu:server:HireMember', function(recruit)
 	local src = source
-	local Player = exports['qr-core']:GetPlayer(src)
-	local Target = exports['qr-core']:GetPlayer(recruit)
+	local Player = QRCore.Functions.GetPlayer(src)
+	local Target = QRCore.Functions.GetPlayer(recruit)
 
 	if not Player.PlayerData.gang.isboss then ExploitBan(src, 'HireEmployee Exploiting') return end
 
@@ -204,17 +204,17 @@ RegisterNetEvent('qr-gangmenu:server:HireMember', function(recruit)
 end)
 
 -- Get closest player sv
-exports['qr-core']:CreateCallback('qr-gangmenu:getplayers', function(source, cb)
+QRCore.Functions.CreateCallback('qr-gangmenu:getplayers', function(source, cb)
 	local src = source
 	local players = {}
 	local PlayerPed = GetPlayerPed(src)
 	local pCoords = GetEntityCoords(PlayerPed)
-	for _, v in pairs(exports['qr-core']:GetPlayers()) do
+	for _, v in pairs(QRCore.Functions.GetPlayers()) do
 		local targetped = GetPlayerPed(v)
 		local tCoords = GetEntityCoords(targetped)
 		local dist = #(pCoords - tCoords)
 		if PlayerPed ~= targetped and dist < 10 then
-			local ped = exports['qr-core']:GetPlayer(v)
+			local ped = QRCore.Functions.GetPlayer(v)
 			players[#players+1] = {
 			id = v,
 			coords = GetEntityCoords(targetped),
