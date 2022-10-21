@@ -1,7 +1,7 @@
 Config = {}
 
 Config.BossLocations = {
-    {name = 'Railroad Boss',	bossname = "railroad-boss",	coords = vector3(-176.3523, 631.05371, 114.08957),	showblip = true},
+    {name = 'Boss Menu', bossname = "Boss-Menu", coords = vector3(-274.88, 805.72, 119.37),	showblip = true},
 }
 
 Config.GangLocations = {
