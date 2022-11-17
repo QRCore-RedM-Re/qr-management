@@ -219,7 +219,7 @@ RegisterNetEvent('qr-bossmenu:client:Stash', function()
 end)
 
 RegisterNetEvent('qr-bossmenu:client:Wardrobe', function()
-    TriggerEvent('qr-clothing:client:openOutfitMenu')
+    TriggerEvent('qr_clothes:OpenOutfits')
 end)
 
 RegisterNetEvent('qr-bossmenu:client:HireMenu', function()
