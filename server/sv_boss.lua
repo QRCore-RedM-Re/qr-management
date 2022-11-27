@@ -147,10 +147,10 @@ RegisterNetEvent('qr-bossmenu:server:GradeUpdate', function(data)
 	
 	if Employee then
 		if Employee.Functions.SetJob(Player.PlayerData.job.name, data.grade) then
-			TriggerClientEvent('QRCore:Notify', src, "Sucessfulluy promoted!", "success")
+			TriggerClientEvent('QRCore:Notify', src, "Successfully promoted!", "success")
 			TriggerClientEvent('QRCore:Notify', Employee.PlayerData.source, "You have been promoted to" ..data.gradename..".", "success")
 		else
-			TriggerClientEvent('QRCore:Notify', src, "Promotion grade does not exist.", "error")
+			TriggerClientEvent('QRCore:Notify', src, "Grade does not exist.", "error")
 		end
 	else
 		TriggerClientEvent('QRCore:Notify', src, "Civilian not in city.", "error")
