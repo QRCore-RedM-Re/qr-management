@@ -6,7 +6,7 @@ local gangmenu
 
 Citizen.CreateThread(function()
      for gangmenu, v in pairs(Config.GangLocations) do
-         exports['qr-core']:createPrompt(v.gangname, v.coords, QRCore.Shared.Keybinds['J'], 'Open ' .. v.name, {
+         exports['qr-core']:createPrompt(v.gangname, v.coords, QRCore.Shared.GetKey('J'), 'Open ' .. v.name, {
              type = 'client',
              event = 'qr-gangmenu:client:OpenMenu',
              args = { },

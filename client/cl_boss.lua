@@ -6,7 +6,7 @@ local bossmenu
 
 Citizen.CreateThread(function()
      for bossmenu, v in pairs(Config.BossLocations) do
-         exports['qr-core']:createPrompt(v.bossname, v.coords, QRCore.Shared.Keybinds['J'], 'Open ' .. v.name, {
+         exports['qr-core']:createPrompt(v.bossname, v.coords, QRCore.Shared.GetKey('J'), 'Open ' .. v.name, {
              type = 'client',
              event = 'qr-bossmenu:client:OpenMenu',
              args = { },
