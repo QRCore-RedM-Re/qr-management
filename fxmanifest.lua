@@ -4,18 +4,9 @@ rdr3_warning 'I acknowledge that this is a prerelease build of RedM, and I am aw
 
 description 'QR-Management'
 
-client_scripts {
-    'client/*.lua'
-}
-
-server_scripts {
-    '@oxmysql/lib/MySQL.lua',
-    'server/*.lua'
-}
-
-shared_scripts {
-	'config.lua'
-}
+client_scripts { 'modules/client.lua', 'client/*.lua' }
+server_scripts { '@oxmysql/lib/MySQL.lua', 'modules/server.lua', 'server/*.lua' }
+shared_scripts { '@ox_lib/init.lua', 'config.lua' }
 
 server_exports {
     'AddMoney',
