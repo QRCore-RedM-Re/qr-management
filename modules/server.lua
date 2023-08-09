@@ -28,20 +28,6 @@ end)
 
 local qrs = {}
 
-function qrs.ExploitBan(id, reason)
-	MySQL.insert('INSERT INTO bans (name, license, discord, ip, reason, expire, bannedby) VALUES (?, ?, ?, ?, ?, ?, ?)', {
-		GetPlayerName(id),
-		QRCore.Functions.GetIdentifier(id, 'license'),
-		QRCore.Functions.GetIdentifier(id, 'discord'),
-		QRCore.Functions.GetIdentifier(id, 'ip'),
-		reason,
-		2147483647,
-		'qr-management'
-	})
-	TriggerEvent('qr-log:server:CreateLog', 'bans', 'Player Banned', 'red', string.format('%s was banned by %s for %s', GetPlayerName(id), 'qr-management', reason), true)
-	DropPlayer(id, 'You were permanently banned by the server for: Exploiting')
-end
-
 function qrs.GetAccount(account)
 	return BossAccounts[account] or 0
 end

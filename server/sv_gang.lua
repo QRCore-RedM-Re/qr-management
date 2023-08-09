@@ -14,7 +14,7 @@ RegisterNetEvent("qr-gangmenu:server:withdrawMoney", function(amount)
 	local src = source
 	local Player = QRCore.Functions.GetPlayer(src)
 
-	if not Player.PlayerData.gang.isboss then qrs.ExploitBan(src, 'withdrawMoney Exploiting') return end
+	if not Player.PlayerData.gang.isboss then export['qr-core']:ExploitBan(src, 'Withdraw Money Exploiting') return end
 
 	local gang = Player.PlayerData.gang.name
 	if qrs.RemoveGangMoney(gang, amount) then
@@ -32,7 +32,7 @@ RegisterNetEvent("qr-gangmenu:server:depositMoney", function(amount)
 	local src = source
 	local Player = QRCore.Functions.GetPlayer(src)
 
-	if not Player.PlayerData.gang.isboss then qrs.ExploitBan(src, 'depositMoney Exploiting') return end
+	if not Player.PlayerData.gang.isboss then export['qr-core']:ExploitBan(src, 'Deposit Money Exploiting') return end
 
 	if Player.Functions.RemoveMoney("cash", amount) then
 		local gang = Player.PlayerData.gang.name
@@ -52,7 +52,7 @@ RegisterNetEvent('qr-gangmenu:server:GradeUpdate', function(data)
 	local Player = QRCore.Functions.GetPlayer(src)
 	local Employee = QRCore.Functions.GetPlayerByCitizenId(data.cid)
 
-	if not Player.PlayerData.gang.isboss then qrs.ExploitBan(src, 'GradeUpdate Exploiting') return end
+	if not Player.PlayerData.gang.isboss then export['qr-core']:ExploitBan(src, 'Grade Update Exploiting') return end
 	if data.grade > Player.PlayerData.gang.grade.level then TriggerClientEvent('QRCore:Notify', src, "You cannot promote to this rank!", "error") return end
 
 	if Employee then
@@ -74,7 +74,7 @@ RegisterNetEvent('qr-gangmenu:server:FireMember', function(target)
 	local Player = QRCore.Functions.GetPlayer(src)
 	local Employee = QRCore.Functions.GetPlayerByCitizenId(target)
 
-	if not Player.PlayerData.gang.isboss then qrs.ExploitBan(src, 'FireEmployee Exploiting') return end
+	if not Player.PlayerData.gang.isboss then export['qr-core']:ExploitBan(src, 'Fire Employee Exploiting') return end
 
 	if Employee then
 		if target ~= Player.PlayerData.citizenid then
@@ -120,7 +120,7 @@ RegisterNetEvent('qr-gangmenu:server:HireMember', function(recruit)
 	local Player = QRCore.Functions.GetPlayer(src)
 	local Target = QRCore.Functions.GetPlayer(recruit)
 
-	if not Player.PlayerData.gang.isboss then qrs.ExploitBan(src, 'HireEmployee Exploiting') return end
+	if not Player.PlayerData.gang.isboss then export['qr-core']:ExploitBan(src, 'Hire Employee Exploiting') return end
 
 	if Target and Target.Functions.SetGang(Player.PlayerData.gang.name, 0) then
 		TriggerClientEvent('QRCore:Notify', src, "You hired " .. (Target.PlayerData.charinfo.firstname .. ' ' .. Target.PlayerData.charinfo.lastname) .. " come " .. Player.PlayerData.gang.label .. "", "success")
@@ -138,7 +138,7 @@ lib.callback.register('qr-gangmenu:server:GetEmployees', function(source, gangna
 	local src = source
 	local Player = QRCore.Functions.GetPlayer(src)
 
-	if not Player.PlayerData.gang.isboss then qrs.ExploitBan(src, 'GetEmployees Exploiting') return end
+	if not Player.PlayerData.gang.isboss then export['qr-core']:ExploitBan(src, 'Get Employees Exploiting') return end
 
 	local employees = {}
 	local players = MySQL.query.await("SELECT * FROM `players` WHERE `gang` LIKE '%".. gangname .."%'", {})
@@ -148,17 +148,17 @@ lib.callback.register('qr-gangmenu:server:GetEmployees', function(source, gangna
 
 			if isOnline then
 				employees[#employees+1] = {
-				empSource = isOnline.PlayerData.citizenid,
-				grade = isOnline.PlayerData.gang.grade,
-				isboss = isOnline.PlayerData.gang.isboss,
-				name = '🟢' .. isOnline.PlayerData.charinfo.firstname .. ' ' .. isOnline.PlayerData.charinfo.lastname
+					empSource = isOnline.PlayerData.citizenid,
+					grade = isOnline.PlayerData.gang.grade,
+					isboss = isOnline.PlayerData.gang.isboss,
+					name = '🟢' .. isOnline.PlayerData.charinfo.firstname .. ' ' .. isOnline.PlayerData.charinfo.lastname
 				}
 			else
 				employees[#employees+1] = {
-				empSource = value.citizenid,
-				grade =  json.decode(value.gang).grade,
-				isboss = json.decode(value.gang).isboss,
-				name = '❌' ..  json.decode(value.charinfo).firstname .. ' ' .. json.decode(value.charinfo).lastname
+					empSource = value.citizenid,
+					grade =  json.decode(value.gang).grade,
+					isboss = json.decode(value.gang).isboss,
+					name = '❌' ..  json.decode(value.charinfo).firstname .. ' ' .. json.decode(value.charinfo).lastname
 				}
 			end
 		end
